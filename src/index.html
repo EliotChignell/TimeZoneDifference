@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Home</title>
+        <link rel="stylesheet" type="text/css" href="styles/style.css">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+    </head>
+
+    <body>
+        <main>
+            <section id="header">
+                <!-- <h1>Timezone Difference Calculator</h1> -->
+            </section>
+
+            <br>
+ 
+            <center>
+            <section id="input">
+                <input list="all-timezones" id="tz1" placeholder="City 1">
+                <input list="all-timezones" id="tz2" placeholder="City 2">
+    
+                <datalist id="all-timezones"></datalist>
+    
+                <br><br>
+    
+                <label for="start_date">Start: </label>
+                <input name="start_date" id="start_date" type="date">
+    
+                <label for="end_date">End: </label>
+                <input name="end_date" id="end_date" type="date">
+            </section>
+            </center>   
+
+            <br><br>
+
+            <section id="result"></section>
+        </main>
+
+        <script src="scripts/moment.js"></script>
+        <script src="scripts/moment-timezone.js"></script>
+        <script src="scripts/ics.min.js"></script>
+        <script src="scripts/cities.js"></script>
+        <script src="scripts/timezone_city.js"></script>
+        <script src="scripts/index.js"></script>
+    </body>
+</html>
