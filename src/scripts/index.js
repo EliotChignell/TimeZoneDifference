@@ -5,20 +5,16 @@ const start_date = document.querySelector('#start_date');
 const end_date = document.querySelector('#end_date');
 const table = document.querySelector('#result');
 
+// cities and timezone_city variables are imported
+
 // Constants
 const MIN_DATE = '1970-01-01';
 const MAX_DATE = '2500-01-01';
 
-function add_option(value) {
-    const option = document.createElement('option');
-    option.value = value;
-    all_timezones.appendChild(option);
-}
-
 /**
-*   Add all timezones to the datalist
+*   Add all cities to the datalist
 */
-function add_timezones() {
+function add_cities() {
     for (const city in cities) {
         // To account for multiple cities with same name
         const c = cities[city];
@@ -28,34 +24,47 @@ function add_timezones() {
         const duplicate_countries = countries.length != new Set(countries).size;
 
         for (const c2 of c) {
-            add_option(
+            const option = document.createElement('option');
+            option.value = 
                 // City name + potentially province and iso2 (country code)
                 c2.city + 
                 (duplicate_cities ? 
                     duplicate_countries ?
                         `, ${c2.province}, ${c2.iso2}` : 
                     `, ${c2.iso2}` :
-                '')
-            );
+                '');
+            all_timezones.appendChild(option);
         }
     }
 }
 
+/**
+ * Sets default values for the field
+ */
 function set_default_values() {
+    // Sets dates to today and 1 year from today
     start_date.value = moment().format('YYYY-MM-DD');
     end_date.value = moment().add(1, 'year').format('YYYY-MM-DD');
+
+    // Setting the cities to where we think the user is
     tzs[0].value = timezone_city[moment.tz.guess()];
     tzs[1].value = timezone_city[moment.tz.guess()];
 }
 
+/**
+ * Activates event listeners for each field
+ */
 function add_event_listeners() {
-    tzs[0].onkeyup = update_time_difference;
-    tzs[1].onkeyup = update_time_difference;    
-    start_date.onkeyup = update_time_difference;
-    end_date.onkeyup = update_time_difference;
+    for (const field of [...tzs, start_date, end_date]) {
+        field.onkeyup = update_time_difference;
+    }
 }
 
-function get_city_details(city, country) {
+function get_city_details(details) {
+    const city = details[0];
+    const country = details.length > 1 ? details.at(-1) : null;
+    const province = details.length > 2 ? details[1] : null;
+
     const p = cities[city.toLowerCase()];
     
     // No possibilities
@@ -65,19 +74,20 @@ function get_city_details(city, country) {
     if (p.length == 1) return p[0];
 
     // Multiple possibilities
-    return p.find(x => x.iso2 == country);
+    return p.find(x => x.iso2 == country && (!province || province == x.province));
 }
 
 /**
-*   Update the time based on the selected timezones
+*   Update the time differences based on the entered cities
 */
 function update_time_difference() {
-    const [ city1, country1 ] = tzs[0].value.split(', ');
-    const [ city2, country2 ] = tzs[1].value.split(', ');
+    const city1 = get_city_details(tzs[0].value.split(', '));
+    const city2 = get_city_details(tzs[1].value.split(', '));
 
-    const tz1 = get_city_details(city1, country1)?.timezone;
-    const tz2 = get_city_details(city2, country2)?.timezone;
+    const tz1 = city1?.timezone;
+    const tz2 = city2?.timezone;
 
+    // If no timezone found for either
     if (!tz1 || !tz2) return;
 
     const differences = {};
@@ -105,44 +115,67 @@ function update_time_difference() {
         current_difference = moment.tz(current, tz1).diff(moment.tz(current, tz2), 'hours');
     }
 
+    // Adding a thing at the end as well
     if (!differences[end]) differences[end] = null;
 
-    clear_table(table);
-    add_rows(table, differences, end);
+    clear_table();
+
+    const changes = add_rows(table, differences, end);
+
+    return {
+        differences,
+        changes,
+        city1,
+        city2
+    };
 }
 
-function clear_table(table) {
+function clear_table() {
     table.innerHTML = '';
-
-    // // Adding header
-    // const header = table.createTHead();
-    // const row = header.insertRow(0);
-    // const cell = row.insertCell(0);
-    // cell.innerHTML = 'Date';
 }
 
 function add_rows(table, differences, end) {
-    // return Object.keys(differences).sort().map(x => {
-    //     return `<tr><p>${moment(x).format('ddd d MMM YYYY')}: ${differences[x]}</p></tr>`
-    // }).join('');
-
     const tz = tzs[1].value;
+    const changes = [];
     for (const date in differences) {
-        // const row = table.insertRow(-1);
-        // const date_cell = row.insertCell(0);
-        // date_cell.innerHTML = moment(date).format('ddd MMM d Y');
-        // const diff_cell = row.insertCell(1);
-        // diff_cell.innerHTML = `${tz} is ${Math.abs(differences[date])} hours ${differences[date] < 0 ? 'behind' : 'ahead of'} ${tzs[0].value}`;
+        const change_text = `${tz} is ${Math.abs(differences[date])} hours ${differences[date] < 0 ? 'behind' : 'ahead of'} ${tzs[0].value}`;
+        changes.push(change_text);
+
         table.innerHTML += 
             `<p class="date">${moment(date).format('ddd MMM D Y')}</p>` + 
-            ((date == end) ? '' : `<p>|</p><p class="diff">${tz} is <strong>${Math.abs(differences[date])} hours</strong> ${differences[date] < 0 ? 'behind' : 'ahead of'} ${tzs[0].value}</p>` + 
+            ((date == end) ? '' : `<p>|</p><p class="diff">${change_text}</p>` + 
             `<p>|</p>` )
     }
+
+    return changes;
+}
+
+function export_to_calendar() {
+    const { differences, changes, city1, city2 } = update_time_difference();
+    const calendar = ics();
+
+    let index = 0;
+    for (const date in differences) {
+        if (differences[date]) {
+            calendar.addEvent(
+                changes[index].replace('is', 'is now'), 
+                '', // description
+                '', // location
+                moment(date),
+                moment(date).add(1, 'days')
+            );
+        }
+
+        index++;
+    }
+
+    calendar.download(`${city1.city}-${city2.city} Timezone differences`);
 }
 
 // Initialising page
-add_timezones();
+add_cities();
 set_default_values();
 add_event_listeners();
 
+// Initial call
 update_time_difference();

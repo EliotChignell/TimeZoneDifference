@@ -42,6 +42,10 @@ body {
     border-radius: 5px;
 }
 
+#export-button {
+    font-size: 15px;
+}
+
 .date {
     border: 3px solid black;
     display: inline;

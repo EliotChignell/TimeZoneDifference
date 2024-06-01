@@ -29,6 +29,10 @@
     
                 <label for="end_date">End: </label>
                 <input name="end_date" id="end_date" type="date">
+
+                <br><br>
+
+                <button id="export-button" onclick="export_to_calendar()">Export to calendar</button>
             </section>
             </center>   
 
@@ -39,6 +43,7 @@
 
         <script src="scripts/moment.js"></script>
         <script src="scripts/moment-timezone.js"></script>
+        <script src="scripts/FileSaver.min.js"></script>
         <script src="scripts/ics.min.js"></script>
         <script src="scripts/cities.js"></script>
         <script src="scripts/timezone_city.js"></script>
