@@ -1,2 +1,4 @@
 # Timezone-Difference-Calculator
-A simple tool to check time zone differences at any time, and how it changes throughout a period.
+A simple tool to check how timezone differences change over time.
+
+![Example image](https://chig.js.org/assets/example.png)
